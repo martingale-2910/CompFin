@@ -1,0 +1,4 @@
+name = "CompFin"
+uuid = "77e9c7f1-ece3-499b-8a73-a7d0559a2ca7"
+authors = ["martingale <124511455+martingale-2910@users.noreply.github.com>"]
+version = "0.1.0"
