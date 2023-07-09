@@ -54,7 +54,6 @@ function simulate_mc_values(sde::SDE, x0::Float64, dt::Float64, step_scheme::Fun
     else
         return foldl((xi, i) -> simulate_step.(Ref(sde), xi, Ref(dt), Ref(step_scheme); rng=rng), 1:n_steps; init=x0*ones(n_paths, 1))
     end
-    return x
 end
 
 function simulate_mc_paths(sde::SDE, x0::Float64, dt::Float64, step_scheme::Function, n_steps::Int64, n_paths::Int64, pathwise::Bool; rng=default_rng())
