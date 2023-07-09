@@ -1,7 +1,7 @@
 using Test
 using Printf
 using Random: randn, Xoshiro
-using CompFin: GBM, drift, diffusion, compute_euler_step, ddiffusion, compute_milstein_step, compute_runge_kutta_step, simulate_step, simulate_value, simulate_path
+using CompFin: GBM, drift, diffusion, compute_euler_step, ddiffusion, compute_milstein_step, compute_runge_kutta_step, simulate_step, simulate_value, simulate_path, simulate_mc_values, simulate_mc_paths, estimate_mc_result
 
 dt = 0.01
 dwt = sqrt(dt)*randn()
@@ -85,34 +85,44 @@ end
 end
 
 @testset "Monte Carlo Test" begin
-
+    n_steps = 100
+    n_paths = 10000
     # Simulate MC values stepwise
     @test begin
-        true
+        actual_mc_values = simulate_mc_values(gbm, x0, dt, compute_euler_step, n_steps, n_paths, false; rng=Xoshiro(1234))
+        expected_mc_values = x0*ones(n_paths, 1)
+        rng = Xoshiro(1234)
+        for _ = 1:n_steps
+            expected_mc_values = simulate_step.(Ref(gbm), expected_mc_values, Ref(dt), Ref(compute_euler_step); rng=rng)
+        end
+        isapprox(actual_mc_values, expected_mc_values; atol=1e-7)
     end
 
     # Simulate MC values pathwise
     @test begin
-        true
+        actual_mc_values = simulate_mc_values(gbm, x0, dt, compute_euler_step, n_steps, n_paths, true; rng=Xoshiro(1234))
+        rng = Xoshiro(1234)
+        expected_mc_values = simulate_value.(Ref(gbm), x0*ones(n_paths, 1), Ref(dt), Ref(compute_euler_step), Ref(n_steps); rng=rng)
+        isapprox(actual_mc_values, expected_mc_values; atol=1e-7)
     end
 
     # Simulate MC paths stepwise
     @test begin
+        actual_mc_paths = simulate_mc_paths(gbm, x0, dt, compute_euler_step, n_steps, n_paths, false; rng=Xoshiro(1234))
+        expected_mc_paths = x0*ones(n_paths, n_steps + 1)
+        rng = Xoshiro(1234)
+        for i = 1:n_steps
+            expected_mc_paths[:, i + 1] = simulate_step.(Ref(gbm), expected_mc_paths[:, i], Ref(dt), Ref(compute_euler_step); rng=rng)
+        end
+        isapprox(actual_mc_paths, expected_mc_paths; atol=1e-7)
         true
     end
 
     # Simulate MC paths pathwise
     @test begin
-        true
-    end
-
-    # Estimate MC result stepwise
-    @test begin
-        true
-    end
-
-    # Estimate MC result pathwise
-    @test begin
-        true
+        actual_mc_paths = simulate_mc_paths(gbm, x0, dt, compute_euler_step, n_steps, n_paths, true; rng=Xoshiro(1234))
+        rng = Xoshiro(1234)
+        expected_mc_paths = simulate_path.(Ref(gbm), x0*ones(n_paths, 1), Ref(dt), Ref(compute_euler_step), Ref(n_steps); rng=rng)
+        isapprox(actual_mc_paths, expected_mc_paths; atol=1e-7)
     end
 end

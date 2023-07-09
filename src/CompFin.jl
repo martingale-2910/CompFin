@@ -57,30 +57,30 @@ function simulate_path(sde::SDE, x0::Float64, dt::Float64, step_scheme::Function
 end
 
 function simulate_mc_values(sde::SDE, x0::Float64, dt::Float64, step_scheme::Function, n_steps::Int64, n_paths::Int64, pathwise::Bool; rng=default_rng())
-    x = x0*ones(n_paths, 1)
     if pathwise
-        x = simulate_value.(sde, x, dt, step_scheme, n_steps; rng=rng)
+        return simulate_value.(Ref(sde), x0*ones(n_paths, 1), Ref(dt), Ref(step_scheme), Ref(n_steps); rng=rng)
     else
+        x = x0*ones(n_paths, 1)
         for _ = 1:n_steps
-            x = simulate_step.(sde, x, dt, step_scheme)
+            x = simulate_step.(Ref(sde), x, Ref(dt), Ref(step_scheme); rng=rng)
         end
     end
     return x
 end
 
 function simulate_mc_paths(sde::SDE, x0::Float64, dt::Float64, step_scheme::Function, n_steps::Int64, n_paths::Int64, pathwise::Bool; rng=default_rng())
-    x = x0*ones(n_paths, n_steps + 1)
     if pathwise
-        x = simulate_path.(sde, x, dt, step_scheme, n_steps; rng=rng)
+        return simulate_path.(Ref(sde), x0*ones(n_paths, 1), Ref(dt), Ref(step_scheme), Ref(n_steps); rng=rng)
     else
+        x = x0*ones(n_paths, n_steps + 1)
         for i = 1:n_steps
-            x[i + 1] = simulate_step.(sde, x[i], dt, step_scheme; rng=rng)
+            x[:, i + 1] = simulate_step.(Ref(sde), x[:, i], Ref(dt), Ref(step_scheme); rng=rng)
         end
+        return x
     end
-    return x
 end
 
-function estimate_mc_value(sde::SDE, x0::Float64, dt::Float64, step_scheme::Function, n_steps::Int64, n_paths::Int64, pathwise::Bool; rng=default_rng())
+function estimate_mc_result(sde::SDE, x0::Float64, dt::Float64, step_scheme::Function, n_steps::Int64, n_paths::Int64, pathwise::Bool; rng=default_rng())
     x = simulate_mc_values(sde, x0, dt, step_scheme, n_steps, n_paths, pathwise; rng=rng)
     return mean(x), std(x)
 end 
