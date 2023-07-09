@@ -1,7 +1,7 @@
 using Test
 using Printf
-using Random: randn
-using CompFin: GBM, drift, diffusion, compute_euler_step, ddiffusion, compute_milstein_step, compute_runge_kutta_step
+using Random: randn, Xoshiro
+using CompFin: GBM, drift, diffusion, compute_euler_step, ddiffusion, compute_milstein_step, compute_runge_kutta_step, simulate_step, simulate_value, simulate_path
 
 dt = 0.01
 dwt = sqrt(dt)*randn()
@@ -28,44 +28,59 @@ x0 = 100.0
 end
 
 @testset "Stochastic Scheme Test" begin
-    euler_actual_result = compute_euler_step(gbm, x0, dt, dwt)
+    actual_euler_result = compute_euler_step(gbm, x0, dt, dwt)
 
     # Euler-Maruyama
     @test begin
-        euler_expected_result = x0 + drift(gbm, x0)*dt + diffusion(gbm, x0)*dwt
-        isapprox(euler_actual_result, euler_expected_result; atol=1e-7)
+        expected_euler_result = x0 + drift(gbm, x0)*dt + diffusion(gbm, x0)*dwt
+        isapprox(actual_euler_result, expected_euler_result; atol=1e-7)
     end
 
     # Milstein
     @test begin
-        milstein_actual_result = compute_milstein_step(gbm, x0, dt, dwt)
-        milstein_expected_result = euler_actual_result + 0.5*diffusion(gbm, x0)*ddiffusion(gbm, x0)*(dwt^2 - dt)
-        isapprox(milstein_actual_result, milstein_expected_result; atol=1e-7)
+        actual_milstein_result = compute_milstein_step(gbm, x0, dt, dwt)
+        expected_milstein_result = actual_euler_result + 0.5*diffusion(gbm, x0)*ddiffusion(gbm, x0)*(dwt^2 - dt)
+        isapprox(actual_milstein_result, expected_milstein_result; atol=1e-7)
     end
 
     # Runge-Kutta
     @test begin
-        runge_kutta_actual_result = compute_runge_kutta_step(gbm, x0, dt, dwt)
-        runge_kutta_expected_result = euler_actual_result + 0.5*((diffusion(gbm, compute_euler_step(gbm, x0, dt, dt^2)) - diffusion(gbm, x0))/(dt^2))*(dwt^2 - dt)
-        isapprox(runge_kutta_actual_result, runge_kutta_expected_result; atol=1e-7)
+        actual_runge_kutta_result = compute_runge_kutta_step(gbm, x0, dt, dwt)
+        expected_runge_kutta_result = actual_euler_result + 0.5*((diffusion(gbm, compute_euler_step(gbm, x0, dt, dt^2)) - diffusion(gbm, x0))/(dt^2))*(dwt^2 - dt)
+        isapprox(actual_runge_kutta_result, expected_runge_kutta_result; atol=1e-7)
     end
 end
 
 @testset "Stochastic Simulation Test" begin
-
     # Single step 
     @test begin
-        true
+        actual_simulated_step = simulate_step(gbm, x0, dt, compute_euler_step; rng=Xoshiro(1234))
+        dwt = sqrt(dt)*randn(Xoshiro(1234))
+        expected_simulated_step = compute_euler_step(gbm, x0, dt, dwt)
+        isapprox(actual_simulated_step, expected_simulated_step; atol=1e-7)
     end
 
+    n_steps = 100
     # Many steps, single value
     @test begin
-        true
+        actual_simulated_value = simulate_value(gbm, x0, dt, compute_euler_step, n_steps; rng=Xoshiro(1234))
+        expected_simulated_value = x0
+        rng = Xoshiro(1234)
+        for _ in 1:n_steps
+            expected_simulated_value = simulate_step(gbm, expected_simulated_value, dt, compute_euler_step; rng=rng)
+        end
+        isapprox(actual_simulated_value, expected_simulated_value; atol=1e-7)
     end
 
     # Whole path
     @test begin
-        true
+        actual_simulated_path = simulate_path(gbm, x0, dt, compute_euler_step, n_steps; rng=Xoshiro(1234))
+        expected_simulated_path = x0*ones(1, n_steps + 1)
+        rng = Xoshiro(1234)
+        for i in 1:n_steps
+            expected_simulated_path[i + 1] = simulate_step(gbm, expected_simulated_path[i], dt, compute_euler_step; rng=rng)
+        end
+        isapprox(actual_simulated_path, expected_simulated_path; atol=1e-7)
     end
 end
 
