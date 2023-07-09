@@ -45,17 +45,14 @@ function simulate_value(sde::SDE, x0::Float64, dt::Float64, step_scheme::Functio
 end
 
 function simulate_path(sde::SDE, x0::Float64, dt::Float64, step_scheme::Function, n_steps::Int64; rng=default_rng())
-    return [x0 adjoint(accumulate((xi, i) -> simulate_step(sde, xi, dt, step_scheme; rng=rng), 1:n_steps; dims=1, init=x0))]
+    return [x0 hcat(accumulate((xi, i) -> simulate_step(sde, xi, dt, step_scheme; rng=rng), 1:n_steps; init=x0)...)]
 end
 
 function simulate_mc_values(sde::SDE, x0::Float64, dt::Float64, step_scheme::Function, n_steps::Int64, n_paths::Int64, pathwise::Bool; rng=default_rng())
     if pathwise
         return simulate_value.(Ref(sde), x0*ones(n_paths, 1), Ref(dt), Ref(step_scheme), Ref(n_steps); rng=rng)
     else
-        x = x0*ones(n_paths, 1)
-        for _ = 1:n_steps
-            x = simulate_step.(Ref(sde), x, Ref(dt), Ref(step_scheme); rng=rng)
-        end
+        return foldl((xi, i) -> simulate_step.(Ref(sde), xi, Ref(dt), Ref(step_scheme); rng=rng), 1:n_steps; init=x0*ones(n_paths, 1))
     end
     return x
 end
@@ -64,11 +61,7 @@ function simulate_mc_paths(sde::SDE, x0::Float64, dt::Float64, step_scheme::Func
     if pathwise
         return simulate_path.(Ref(sde), x0*ones(n_paths, 1), Ref(dt), Ref(step_scheme), Ref(n_steps); rng=rng)
     else
-        x = x0*ones(n_paths, n_steps + 1)
-        for i = 1:n_steps
-            x[:, i + 1] = simulate_step.(Ref(sde), x[:, i], Ref(dt), Ref(step_scheme); rng=rng)
-        end
-        return x
+        return [x0*ones(n_paths, 1) hcat(accumulate((xi, i) -> simulate_step.(Ref(sde), xi, Ref(dt), Ref(step_scheme); rng=rng), 1:n_steps; init=x0*ones(n_paths, 1))...)]
     end
 end
 
