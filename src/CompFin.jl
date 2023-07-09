@@ -41,19 +41,11 @@ function simulate_step(sde::SDE, x0::Float64, dt::Float64, step_scheme::Function
 end
 
 function simulate_value(sde::SDE, x0::Float64, dt::Float64, step_scheme::Function, n_steps::Int64; rng=default_rng())
-    xi = x0
-    for _ = 1:n_steps
-        xi = simulate_step(sde, xi, dt, step_scheme; rng=rng)
-    end
-    return xi
+    return foldl((xi, i) -> simulate_step(sde, xi, dt, step_scheme; rng=rng), 1:n_steps; init=x0)
 end
 
 function simulate_path(sde::SDE, x0::Float64, dt::Float64, step_scheme::Function, n_steps::Int64; rng=default_rng())
-    x = x0*ones(1, n_steps + 1)
-    for i = 1:n_steps 
-        x[i + 1] = simulate_step(sde, x[i], dt, step_scheme; rng=rng)
-    end
-    return x
+    return [x0 adjoint(accumulate((xi, i) -> simulate_step(sde, xi, dt, step_scheme; rng=rng), 1:n_steps; dims=1, init=x0))]
 end
 
 function simulate_mc_values(sde::SDE, x0::Float64, dt::Float64, step_scheme::Function, n_steps::Int64, n_paths::Int64, pathwise::Bool; rng=default_rng())
