@@ -3,6 +3,10 @@ module CompFin
 using Random: randn, default_rng
 using Statistics: mean, std
 
+# MC
+
+# SDEs
+
 abstract type SDE end
 
 struct GBM <: SDE
@@ -22,6 +26,8 @@ function ddiffusion(gbm::GBM, x::Float64)
     return gbm.sigma
 end
 
+# SCHEMEs
+
 function compute_euler_step(sde::SDE, x0::Float64, dt::Float64, dwt::Float64)
     return x0 + drift(sde, x0)*dt + diffusion(sde, x0)*dwt
 end
@@ -34,6 +40,8 @@ function compute_runge_kutta_step(sde::SDE, x0::Float64, dt::Float64, dwt::Float
     x0_corr = compute_euler_step(sde, x0, dt, dt^2)
     return compute_euler_step(sde, x0, dt, dwt) + 0.5*((diffusion(sde, x0_corr) - diffusion(sde, x0))/(dt^2))*(dwt^2 - dt)
 end
+
+# SIMULATIONs
 
 function simulate_step(sde::SDE, x0::Float64, dt::Float64, step_scheme::Function; rng=default_rng())
     dwt = sqrt(dt)*randn(rng)
@@ -58,7 +66,7 @@ end
 
 function simulate_mc_paths(sde::SDE, x0::Float64, dt::Float64, step_scheme::Function, n_steps::Int64, n_paths::Int64, pathwise::Bool; rng=default_rng())
     if pathwise
-        return simulate_path.(Ref(sde), x0*ones(n_paths, 1), Ref(dt), Ref(step_scheme), Ref(n_steps); rng=rng)
+        return vcat(simulate_path.(Ref(sde), x0*ones(n_paths, 1), Ref(dt), Ref(step_scheme), Ref(n_steps); rng=rng)...)
     else
         return [x0*ones(n_paths, 1) hcat(accumulate((xi, i) -> simulate_step.(Ref(sde), xi, Ref(dt), Ref(step_scheme); rng=rng), 1:n_steps; init=x0*ones(n_paths, 1))...)]
     end
