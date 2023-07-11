@@ -93,7 +93,9 @@ end
         expected_mc_values = x0*ones(n_paths, 1)
         rng = Xoshiro(1234)
         for _ = 1:n_steps
-            expected_mc_values = simulate_step.(Ref(gbm), expected_mc_values, Ref(dt), Ref(compute_euler_step); rng=rng)
+            for i = 1:n_paths
+                expected_mc_values[i] = simulate_step(gbm, expected_mc_values[i], dt, compute_euler_step; rng=rng)
+            end
         end
         isapprox(actual_mc_values, expected_mc_values; atol=1e-7)
     end
@@ -102,7 +104,10 @@ end
     @test begin
         actual_mc_values = simulate_mc_values(gbm, x0, dt, compute_euler_step, n_steps, n_paths, true; rng=Xoshiro(1234))
         rng = Xoshiro(1234)
-        expected_mc_values = simulate_value.(Ref(gbm), x0*ones(n_paths, 1), Ref(dt), Ref(compute_euler_step), Ref(n_steps); rng=rng)
+        expected_mc_values = x0*ones(n_paths, 1)
+        for i = 1:n_paths
+            expected_mc_values[i] = simulate_value(gbm, x0, dt, compute_euler_step, n_steps; rng=rng)
+        end
         isapprox(actual_mc_values, expected_mc_values; atol=1e-7)
     end
 
@@ -112,7 +117,9 @@ end
         expected_mc_paths = x0*ones(n_paths, n_steps + 1)
         rng = Xoshiro(1234)
         for i = 1:n_steps
-            expected_mc_paths[:, i + 1] = simulate_step.(Ref(gbm), expected_mc_paths[:, i], Ref(dt), Ref(compute_euler_step); rng=rng)
+            for j = 1:n_paths
+                expected_mc_paths[j, i + 1] = simulate_step(gbm, expected_mc_paths[j, i], dt, compute_euler_step; rng=rng)
+            end
         end
         isapprox(actual_mc_paths, expected_mc_paths; atol=1e-7)
         true
@@ -122,7 +129,10 @@ end
     @test begin
         actual_mc_paths = simulate_mc_paths(gbm, x0, dt, compute_euler_step, n_steps, n_paths, true; rng=Xoshiro(1234))
         rng = Xoshiro(1234)
-        expected_mc_paths = simulate_path.(Ref(gbm), x0*ones(n_paths, 1), Ref(dt), Ref(compute_euler_step), Ref(n_steps); rng=rng)
+        expected_mc_paths = x0*ones(n_paths, n_steps + 1)
+        for i = 1:n_paths
+            expected_mc_paths[i, :] = simulate_path(gbm, x0, dt, compute_euler_step, n_steps; rng=rng)
+        end
         isapprox(actual_mc_paths, expected_mc_paths; atol=1e-7)
     end
 end
