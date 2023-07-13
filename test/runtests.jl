@@ -89,12 +89,12 @@ end
     n_paths = 10000
     # Simulate MC values stepwise
     @test begin
-        actual_mc_values = simulate_mc_values(gbm, x0, dt, compute_euler_step, n_steps, n_paths, false; rng=Xoshiro(1234))
+        actual_mc_values = simulate_mc_values(gbm, x0, dt, compute_euler_step, n_steps, n_paths, false, rng=Xoshiro(1234))
         expected_mc_values = x0*ones(n_paths, 1)
         rng = Xoshiro(1234)
         for _ = 1:n_steps
             for i = 1:n_paths
-                expected_mc_values[i] = simulate_step(gbm, expected_mc_values[i], dt, compute_euler_step; rng=rng)
+                expected_mc_values[i] = simulate_step(gbm, expected_mc_values[i], dt, compute_euler_step, rng=rng)
             end
         end
         isapprox(actual_mc_values, expected_mc_values; atol=1e-7)
@@ -102,7 +102,7 @@ end
 
     # Simulate MC values pathwise
     @test begin
-        actual_mc_values = simulate_mc_values(gbm, x0, dt, compute_euler_step, n_steps, n_paths, true; rng=Xoshiro(1234))
+        actual_mc_values = simulate_mc_values(gbm, x0, dt, compute_euler_step, n_steps, n_paths, true, rng=Xoshiro(1234))
         rng = Xoshiro(1234)
         expected_mc_values = x0*ones(n_paths, 1)
         for i = 1:n_paths
@@ -113,7 +113,7 @@ end
 
     # Simulate MC paths stepwise as matrix
     @test begin
-        actual_mc_paths = simulate_mc_paths(gbm, x0, dt, compute_euler_step, n_steps, n_paths, false; rng=Xoshiro(1234), as_matrix=true)
+        actual_mc_paths = simulate_mc_paths(gbm, x0, dt, compute_euler_step, n_steps, n_paths, false, rng=Xoshiro(1234), as_matrix=true)
         expected_mc_paths = x0*ones(n_paths, n_steps + 1)
         rng = Xoshiro(1234)
         for i = 1:n_steps
@@ -126,7 +126,7 @@ end
 
     # Simulate MC paths stepwise as vector of vectors
     @test begin
-        actual_mc_paths = simulate_mc_paths(gbm, x0, dt, compute_euler_step, n_steps, n_paths, false; rng=Xoshiro(1234), as_matrix=false)
+        actual_mc_paths = simulate_mc_paths(gbm, x0, dt, compute_euler_step, n_steps, n_paths, false, rng=Xoshiro(1234), as_matrix=false)
         size(actual_mc_paths)
         expected_mc_paths = Vector{Vector{Float64}}(undef, n_steps + 1)
         expected_mc_paths[1] = [x0*ones(n_paths, 1)...]

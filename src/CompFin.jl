@@ -3,8 +3,6 @@ module CompFin
 using Random: randn, default_rng
 using Statistics: mean, std
 
-# MC
-
 # SDEs
 
 abstract type SDE end
@@ -55,6 +53,8 @@ end
 function simulate_path(sde::SDE, x0::Float64, dt::Float64, step_scheme::Function, n_steps::Int64; rng=default_rng())
     return [x0 hcat(accumulate((xi, i) -> simulate_step(sde, xi, dt, step_scheme; rng=rng), 1:n_steps; init=x0)...)]
 end
+
+# MC
 
 function simulate_mc_values(sde::SDE, x0::Float64, dt::Float64, step_scheme::Function, n_steps::Int64, n_paths::Int64, pathwise::Bool; rng=default_rng(), as_matrix::Bool=true)
     if pathwise
