@@ -89,4 +89,36 @@ function estimate_mc_result(sde::SDE, x0::Float64, dt::Float64, step_scheme::Fun
     return mean(x), std(x)
 end 
 
+# PDE
+
+abstract type PDE end
+
+struct HeatEquation <: PDE
+    initial_condition::Function
+    left_boundary_condition::Function
+    right_boundary_condition::Function
+end
+
+# FDM
+
+function solve_pde(heat_equation::HeatEquation, xmin::Float64, xmax::Float64, nx::Int64, tmin::Float64, tmax::Float64, nt::Int64)::Matrix{Float64}
+    dt = (tmax - tmin)/nt
+    dx = (xmax - xmin)/nx
+    lambda = dt/(dx^2)
+
+    t = dt*collect(0:nt)
+    x = dx*collect(0:nx)
+    u = fill(0.0, nt + 1, nx + 1)
+
+    u[1:end, 1] = heat_equation.left_boundary_condition.(t)
+    u[1:end, end] = heat_equation.right_boundary_condition.(t)
+    u[1, :] = heat_equation.initial_condition.(x)
+
+    for i = 1:nt
+        u[i + 1, 2:end - 1] = lambda*u[i, 1:end - 2] .+ (1-2*lambda)*u[i, 2:end - 1] .+ lambda*u[i, 3:end]
+    end
+
+    return u
+end
+
 end # module CompFin

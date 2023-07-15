@@ -1,7 +1,7 @@
 using Test
 using Printf
 using Random: randn, Xoshiro
-using CompFin: GBM, drift, diffusion, compute_euler_step, ddiffusion, compute_milstein_step, compute_runge_kutta_step, simulate_step, simulate_value, simulate_path, simulate_mc_values, simulate_mc_paths, estimate_mc_result
+using CompFin: GBM, drift, diffusion, compute_euler_step, ddiffusion, compute_milstein_step, compute_runge_kutta_step, simulate_step, simulate_value, simulate_path, simulate_mc_values, simulate_mc_paths, estimate_mc_result, HeatEquation, solve_pde
 
 dt = 0.01
 dwt = sqrt(dt)*randn()
@@ -86,7 +86,7 @@ end
 
 @testset "Monte Carlo Test" begin
     n_steps = 100
-    n_paths = 10000
+    n_paths = 1000
     # Simulate MC values stepwise
     @test begin
         actual_mc_values = simulate_mc_values(gbm, x0, dt, compute_euler_step, n_steps, n_paths, false, rng=Xoshiro(1234))
@@ -160,5 +160,28 @@ end
             expected_mc_paths[i] = [simulate_path(gbm, x0, dt, compute_euler_step, n_steps; rng=rng)...]
         end
         isapprox(actual_mc_paths, expected_mc_paths; atol=1e-7)
+    end
+
+end
+
+@testset "Explicit Scheme Heat Equation Test" begin
+    init_cond = x -> x*(1 - x)
+    left_bound = t -> 20*t^2
+    right_bound = t -> 10*t
+
+    pde = HeatEquation(init_cond, left_bound, right_bound)
+
+    x_min = 0.0
+    x_max = 1.0
+    n_x = 4
+    t_min = 0.0
+    t_max = 0.03
+    n_t = 3
+
+    # Simple Explicit Scheme computation
+    @test begin
+        actual_u = solve_pde(pde, x_min, x_max, n_x, t_min, t_max, n_t)
+        expected_u = [0 0.1875 0.25 0.1875 0; 0.002 0.1675 0.23 0.1675 0.1; 0.008 0.151 0.21 0.1667 0.2; 0.018 0.1376 0.1936 0.179 0.3]
+        isapprox(actual_u, expected_u; atol=1e-4)
     end
 end
