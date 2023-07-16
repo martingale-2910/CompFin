@@ -2,7 +2,7 @@
 
 julia_version = "1.9.2"
 manifest_format = "2.0"
-project_hash = "2c1b124dbab8281441ae555b507734a8167b709e"
+project_hash = "6cfbfa1fd6320265fc9062a84e8ec224696fa3cb"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -63,7 +63,7 @@ version = "0.12.10"
 
 [[deps.CompFin]]
 deps = ["Random", "Statistics"]
-git-tree-sha1 = "0f0296681c0b040692f46d77cdd23e4f40f91dcf"
+git-tree-sha1 = "7f308d25ce0ba3b69205d0f885d2b7f6baabd762"
 repo-rev = "master"
 repo-url = ".."
 uuid = "77e9c7f1-ece3-499b-8a73-a7d0559a2ca7"
