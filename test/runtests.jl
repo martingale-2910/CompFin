@@ -169,7 +169,7 @@ end
     left_bound = t -> 20*t^2
     right_bound = t -> 10*t
 
-    pde = HeatEquation(init_cond, left_bound, right_bound)
+    pde = HeatEquation(1.0, init_cond, left_bound, right_bound)
 
     x_min = 0.0
     x_max = 1.0

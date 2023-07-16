@@ -94,6 +94,7 @@ end
 abstract type PDE end
 
 struct HeatEquation <: PDE
+    alpha::Float64
     initial_condition::Function
     left_boundary_condition::Function
     right_boundary_condition::Function
@@ -104,7 +105,7 @@ end
 function solve_pde(heat_equation::HeatEquation, xmin::Float64, xmax::Float64, nx::Int64, tmin::Float64, tmax::Float64, nt::Int64)::Matrix{Float64}
     dt = (tmax - tmin)/nt
     dx = (xmax - xmin)/nx
-    lambda = dt/(dx^2)
+    lambda = (heat_equation.alpha)*dt/(dx^2)
 
     t = dt*collect(0:nt)
     x = dx*collect(0:nx)
