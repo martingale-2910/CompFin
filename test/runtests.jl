@@ -181,7 +181,24 @@ end
     # Explicit Scheme
     @test begin
         actual_u = solve_pde(pde, xmin, xmax, nx, tmin, tmax, nt)
-        expected_u = [0 0.1875 0.25 0.1875 0; 0.002 0.1675 0.23 0.1675 0.1; 0.008 0.151 0.21 0.1667 0.2; 0.018 0.1376 0.1936 0.179 0.3]
+        expected_u = [
+            0.0 0.1875 0.25 0.1875 0.0; 
+            0.002 0.1675 0.23 0.1675 0.1; 
+            0.008 0.151 0.21 0.1667 0.2; 
+            0.018 0.1376 0.1936 0.179 0.3
+        ]
+        isapprox(actual_u, expected_u; atol=1e-4)
+    end
+
+    # Implicit Scheme 
+    @test begin
+        actual_u = solve_pde(pde, xmin, xmax, nx, tmin, tmax, nt, scheme_step_fn=implicit_scheme_step)
+        expected_u = [
+            0.0 0.1875 0.25 0.1875 0.0;
+            0.002 0.1704 0.2321 0.1823 0.1;
+            0.008 0.1565 0.2177 0.1887 0.2;
+            0.018 0.1459 0.2074 0.2045 0.3
+        ]
         isapprox(actual_u, expected_u; atol=1e-4)
     end
 end

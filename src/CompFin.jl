@@ -140,8 +140,8 @@ function solve_pde(heat_equation::HeatEquation, xmin::Float64, xmax::Float64, nx
     x = dx*collect(0:nx)
     u = fill(0.0, nt + 1, nx + 1)
 
-    u[1:end, 1] = heat_equation.left_boundary_condition.(t)
-    u[1:end, end] = heat_equation.right_boundary_condition.(t)
+    u[:, 1] = heat_equation.left_boundary_condition.(t)
+    u[:, end] = heat_equation.right_boundary_condition.(t)
     u[1, :] = heat_equation.initial_condition.(x)
 
     for i = 1:nt
