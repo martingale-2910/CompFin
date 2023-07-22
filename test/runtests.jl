@@ -1,7 +1,7 @@
 using Test
 using Printf
 using Random: randn, Xoshiro
-using CompFin: GBM, drift, diffusion, compute_euler_step, ddiffusion, compute_milstein_step, compute_runge_kutta_step, simulate_step, simulate_value, simulate_path, simulate_mc_values, simulate_mc_paths, estimate_mc_result, HeatEquation, solve_pde, implicit_scheme_step
+using CompFin: GBM, drift, diffusion, compute_euler_step, ddiffusion, compute_milstein_step, compute_runge_kutta_step, simulate_step, simulate_value, simulate_path, simulate_mc_values, simulate_mc_paths, estimate_mc_result, HeatEquation, solve_pde
 
 dt = 0.01
 dwt = sqrt(dt)*randn()
@@ -180,7 +180,7 @@ end
 
     # Explicit Scheme
     @test begin
-        actual_u = solve_pde(pde, xmin, xmax, nx, tmin, tmax, nt)
+        actual_u = solve_pde(pde, xmin, xmax, nx, tmin, tmax, nt, theta=0.0)
         expected_u = [
             0.0 0.1875 0.25 0.1875 0.0; 
             0.002 0.1675 0.23 0.1675 0.1; 
@@ -192,7 +192,7 @@ end
 
     # Implicit Scheme 
     @test begin
-        actual_u = solve_pde(pde, xmin, xmax, nx, tmin, tmax, nt, scheme_step_fn=implicit_scheme_step)
+        actual_u = solve_pde(pde, xmin, xmax, nx, tmin, tmax, nt, theta=1.0)
         expected_u = [
             0.0 0.1875 0.25 0.1875 0.0;
             0.002 0.1704 0.2321 0.1823 0.1;
