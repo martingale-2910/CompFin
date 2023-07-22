@@ -103,35 +103,10 @@ end
 
 # FDM
 
-function explicit_scheme_step(u_prev::Vector{Float64}, u_boundary_next::Vector{Float64}, lambda::Float64)
-    return theta_scheme_step(u_prev, u_boundary_next, lambda, 0.0)
-end
-
-function implicit_scheme_step(u_prev::Vector{Float64}, u_boundary_next::Vector{Float64}, lambda::Float64)
-    return theta_scheme_step(u_prev, u_boundary_next, lambda, 1.0)
-end
-
-function crank_nicholson_step(u_prev::Vector{Float64}, u_boundary_next::Vector{Float64}, lambda::Float64)
-    return theta_scheme_step(u_prev, u_boundary_next, lambda, 0.5)
-end
-
-function theta_scheme_step(u_prev::Vector{Float64}, u_boundary_next::Vector{Float64}, lambda::Float64, theta::Float64)
-    # TODO: This is initialized in each step, not too good
-    # TODO: Use SparseArrays once they support '[...] self-adjoint sparse system solve not implemented for sparse rhs B. [...]'
-    nx = length(u_prev)
-    M = lambda*Tridiagonal(vec(ones(nx - 3, 1)), -2*vec(ones(nx - 2, 1)), vec(ones(nx - 3, 1)))
-    B = I - theta*M
-    A = I + (1 - theta)*M
-    # TODO: This initialization below is ugly
-    m = vec(zeros(1, nx - 2))
-    m[[1, end]] = [u_boundary_next[1], u_boundary_next[end]]
-    b = theta*(-lambda)*m
-    m[[1, end]] = [u_prev[1], u_prev[end]]
-    a = (1 - theta)*(lambda)*m
-    return B\(A*u_prev[2:end - 1] + a - b)
-end
-
-function solve_pde(heat_equation::HeatEquation, xmin::Float64, xmax::Float64, nx::Int64, tmin::Float64, tmax::Float64, nt::Int64; scheme_step_fn::Function=explicit_scheme_step)::Matrix{Float64}
+# theta == 0.0 <=> Explicit method
+# theta == 1.0 <=> Implicit method
+# theta == 0.5 <=> Crank-Nicholson method
+function solve_pde(heat_equation::HeatEquation, xmin::Float64, xmax::Float64, nx::Int64, tmin::Float64, tmax::Float64, nt::Int64; theta::Float64=0.0)::Matrix{Float64}
     dt = (tmax - tmin)/nt
     dx = (xmax - xmin)/nx
     lambda = (heat_equation.alpha)*dt/(dx^2)
@@ -144,8 +119,14 @@ function solve_pde(heat_equation::HeatEquation, xmin::Float64, xmax::Float64, nx
     u[:, end] = heat_equation.right_boundary_condition.(t)
     u[1, :] = heat_equation.initial_condition.(x)
 
+    # TODO: Use SparseArrays once they resolve '[...] self-adjoint sparse system solve not implemented for sparse rhs B. [...]'
+    M = lambda*Tridiagonal(vec(ones(nx - 2, 1)), -2*vec(ones(nx - 1, 1)), vec(ones(nx - 2, 1)))
+    B = I - theta*M
+    A = I + (1 - theta)*M
     for i = 1:nt
-        u[i + 1, 2:end - 1] = scheme_step_fn(u[i, :], u[i + 1, [1, end]], lambda)
+        m[[1, end]] = [u[i + 1, 1], u[i + 1, end]]
+        b = theta*(-lambda)*m
+        u[i + 1, 2:end - 1] = B(A*u[i, 2:end - 1] + a - b)
     end
 
     return u

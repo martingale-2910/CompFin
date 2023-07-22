@@ -18,5 +18,4 @@ It exposes the following tools for computational finance:
 
 - `Random` package
 - `Statistics` package
-- `Distributions` package
-- `SpecialPolynomials` package
+- `LinearAlgebra` package
